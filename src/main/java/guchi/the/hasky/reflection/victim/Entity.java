@@ -2,10 +2,12 @@ package guchi.the.hasky.reflection.victim;
 
 public class Entity {
     private int weight;
-    public Entity(){
+
+    public Entity() {
         weight = 0;
     }
-    public Entity(int weight){
+
+    public Entity(int weight) {
         this.weight = weight;
     }
 
