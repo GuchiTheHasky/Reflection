@@ -3,54 +3,82 @@ package guchi.the.hasky.reflection;
 import java.lang.reflect.*;
 import java.util.Arrays;
 
-public class Reflection {
+public class Reflection implements ReflectionMethods {
 
-
+    @Override
     public Object createVictim(Class<?> clazz) throws Throwable {
         Constructor<?> constructor = clazz.getConstructor();
         return constructor.newInstance();
     }
 
-    public void callMethodsWithoutParameters(Object object) throws InvocationTargetException, IllegalAccessException {
+    @Override
+    public void callMethodsWithoutParameters(Object object) {
         Class<?> clazz = object.getClass();
         Method[] methods = clazz.getDeclaredMethods();
         for (Method method : methods) {
             method.setAccessible(true);
             if (method.getParameters().length == 0) {
-                method.invoke(object);
+                try {
+                    method.invoke(object);
+                } catch (IllegalAccessException | InvocationTargetException e) {
+                    throw new RuntimeException(e);
+                }
             }
         }
     }
 
+    @Override
     public String printFinalMethodsSignaturesInfo(Object object) {
         Class<?> clazz = object.getClass();
         Method[] methods = clazz.getDeclaredMethods();
+        StringBuilder builder = new StringBuilder();
         for (Method method : methods) {
             if (method.getModifiers() == Modifier.FINAL) {
-                return method.toGenericString() + "\n" + Arrays.toString(method.getParameters());
+                builder.append(method.getName()).append(" : ").append(Arrays.toString(method.getParameters()));
             }
         }
-        return "Class doesn't have 'Final' in all methods signatures.";
+        return builder.toString();
     }
 
-    public void callPrivateMethods(Object object, int argument) throws InvocationTargetException, IllegalAccessException {
+    @Override
+    public void callPrivateMethods(Object object) {
         Class<?> clazz = object.getClass();
         Method[] methods = clazz.getDeclaredMethods();
         for (Method method : methods) {
             if (Modifier.isPrivate(method.getModifiers()) && method.getParameterCount() == 0) {
                 method.setAccessible(true);
-                method.invoke(object);
-            } else if (Modifier.isPrivate(method.getModifiers()) && method.getParameterCount() > 0) {
-                method.setAccessible(true);
-                method.invoke(object, argument);
+                try {
+                    method.invoke(object);
+                } catch (IllegalAccessException | InvocationTargetException e) {
+                    throw new RuntimeException(e);
+                }
             }
         }
     }
 
+    @Override
+    public String callPrivateMethodsAndSetParameters(Object object, Object... argument) {
+        Class<?> clazz = object.getClass();
+        Method[] methods = clazz.getDeclaredMethods();
+        for (Method method : methods) {
+            if (Modifier.isPrivate(method.getModifiers()) && method.getParameterCount() > 0) {
+                method.setAccessible(true);
+                StringBuilder builder = new StringBuilder();
+                try {
+                    builder.append(method.invoke(object, argument));
+                    return builder.toString();
+                } catch (IllegalAccessException | InvocationTargetException e) {
+                    throw new RuntimeException(e);
+                }
+            }
+        }
+        return null;
+    }
+
+    @Override
     public String printSuperAndInterfaceInfo(Class<?> clazz) {
         StringBuilder builder = new StringBuilder();
         builder.append(clazz.getSuperclass()).append("\n");
-
         Class<?>[] interfaces = clazz.getInterfaces();
         for (Class<?> anInterface : interfaces) {
             builder.append(anInterface.toString());
@@ -58,6 +86,7 @@ public class Reflection {
         return builder.toString();
     }
 
+    @Override
     public Object setNullValues(Object object) throws IllegalAccessException {
         Class<?> clazz = object.getClass();
         Field[] fields = clazz.getDeclaredFields();
@@ -84,19 +113,4 @@ public class Reflection {
         }
         return object;
     }
-
-
 }
-
-/*Reflection:
-1. Метод принимает класс и возвращает созданный объект этого класса ++/++
-
-2. Метод принимает object и вызывает у него все методы без параметров ++/++
-
-3. Метод принимает object и выводит на экран все сигнатуры методов в который есть final ++/++
-
-4. Метод принимает Class и выводит все не публичные методы этого класса ++/++
-
-5. Метод принимает Class и выводит всех предков класса и все интерфейсы которое класс имплементирует ++/++
-6. Метод принимает объект и меняет все его приватные поля на их нулевые значение (null, 0, false etc) ++/++
-*/

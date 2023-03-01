@@ -1,78 +1,96 @@
 package guchi.the.hasky.reflection;
 
-
 import guchi.the.hasky.reflection.victim.Victim;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-
-import java.lang.reflect.InvocationTargetException;
-
 import static org.junit.jupiter.api.Assertions.*;
 
-
 public class ReflectionTest {
-    Reflection reflection = new Reflection();
-    Victim victim = new Victim();
-    Victim newVictim = (Victim) reflection.createVictim(victim.getClass());
+    private Reflection reflection;
+    private Victim victim;
 
-    public ReflectionTest() throws Throwable {
+    @BeforeEach
+    void init() {
+        reflection = new Reflection();
+        victim = new Victim();
     }
 
-    @DisplayName("Test, is new Victim created")
     @Test
-    public void testCreateNewVictim() {
-        assertEquals(victim.getAge(), newVictim.getAge());
-        assertEquals(victim.getWeight(), newVictim.getWeight());
-        assertEquals(victim.isAngry(), newVictim.isAngry());
+    @DisplayName("Test, is new Victim created, and check default values. ")
+    public void testCreateNewObject() throws Throwable {
+        Victim testVictim = (Victim) reflection.createVictim(victim.getClass());
 
-        assertNotNull(newVictim);
+        assertNotNull(testVictim);
+        assertNull(testVictim.getName());
+        assertEquals(0, testVictim.getAge());
+        assertFalse(testVictim.isHungry());
+        assertEquals(0, testVictim.getWeight());
     }
 
+    @Test
     @DisplayName("Test, set default parameters in constructor.")
-    @Test
     public void testSetDefaultParameters() throws IllegalAccessException {
         victim = new Victim("Lola", 21, true, 48);
         reflection.setNullValues(victim);
 
-        assertEquals(victim.getName(), newVictim.getName());
-        assertEquals(victim.getAge(), newVictim.getAge());
-        assertEquals(victim.isHungry(), newVictim.isHungry());
-        assertEquals(victim.getWeight(), newVictim.getWeight());
+        assertNull(victim.getName());
+        assertEquals(0, victim.getAge());
+        assertFalse(victim.isHungry());
+        assertEquals(0, victim.getWeight());
     }
 
-    @DisplayName("Test, invoke methods with final signature.")
     @Test
+    @DisplayName("Test, invoke signature of methods with final modifier.")
     public void testPrintMethodsWithFinalSignatures() {
-        String result = reflection.printFinalMethodsSignaturesInfo(victim);
-        String newResult = reflection.printFinalMethodsSignaturesInfo(newVictim);
+        String expectedString = "finalMethod : [java.lang.String arg0]";
+        String actualString = reflection.printFinalMethodsSignaturesInfo(victim);
+        System.out.println(expectedString);
+        System.out.println(actualString);
 
-        assertEquals(result, newResult);
+        assertEquals(expectedString, actualString);
     }
 
+    @Test
     @DisplayName("Test, call info about super class & interface.")
-    @Test
     public void testPrintSuperClassAndInterfacesInfo() {
-        String result = reflection.printSuperAndInterfaceInfo(victim.getClass());
-        String newResult = reflection.printSuperAndInterfaceInfo(newVictim.getClass());
+        String expected = "class guchi.the.hasky.reflection.victim.Entity" +
+                "\ninterface guchi.the.hasky.reflection.victim.VictimMethods";
+        String actual = reflection.printSuperAndInterfaceInfo(victim.getClass());
 
-        assertEquals(result, newResult);
+        assertEquals(expected, actual);
+
     }
 
-    @DisplayName("Test, call methods without parameters.")
     @Test
-    public void testCallMethodsWithoutParameters() throws InvocationTargetException, IllegalAccessException {
-        Reflection reflection1 = new Reflection();
-        Victim anotherVictim = new Victim("Ivan", 35, false, 90);
-
-        reflection1.callMethodsWithoutParameters(anotherVictim);
-        assertTrue(anotherVictim.isHungry());
-    }
-    @DisplayName("Test, call all private methods of victim parameters & change their parameters.")
-    @Test
-    public void testCallAllPrivateMethodsOfVictim() throws InvocationTargetException, IllegalAccessException {
-        reflection.callPrivateMethods(victim, 10);
+    @DisplayName("Test, call private methods without parameters.")
+    public void testCallPrivateMethodsWithoutParameters() {
+        reflection.callPrivateMethods(victim);
         assertTrue(victim.isHungry());
+    }
+
+    @Test
+    @DisplayName("Test, call private methods with parameter.")
+    public void testCallPrivateMethodsWithParameters() {
+        reflection.callPrivateMethodsAndSetParameters(victim, 32);
+    }
+
+    @Test
+    @DisplayName("Test, call all methods without parameters.")
+    public void testCallAllMethodsWithoutParameters() {
+        reflection.callMethodsWithoutParameters(victim);
+        assertTrue(victim.isHungry());
+    }
+
+    @Test
+    @DisplayName("Test, call all private methods of victim parameters & change their parameters.")
+    public void testCallAllPrivateMethodsOfVictim() {
+        int argument = 32;
+        String expected = "I am private, my age is: " + argument;
+        String actual = reflection.callPrivateMethodsAndSetParameters(victim, argument);
+
+        assertEquals(expected, actual);
     }
 
 
